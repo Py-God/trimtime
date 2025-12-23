@@ -1,0 +1,25 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    my_reservations
+{% endblock title %}
+
+{% block heading %}
+    <h1>My Reservations</h1>
+{% endblock heading %}
+
+{% block body %}
+        <!-- show the reservation you've made -->
+        <div class="list-group">
+            <!-- show custom message if you've not made any reservations -->
+            {% if not salons %}
+                <p>You have made zero reservations.</p>
+            <!-- form to click for when you've made a reservation -->
+            {% else %}
+                <form action="/customer/my_reservations" method="post">
+                    <input type="hidden" name="salon" value="{{ salons[0]['salon_id'] }}">
+                    <button type="submit" class="list-group-item list-group-item-action">{{ salons[0]["salon_name"] }}</button>
+                </form>
+            {% endif %}
+        </div>
+{% endblock body %}

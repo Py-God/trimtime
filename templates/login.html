@@ -1,0 +1,44 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Login
+{% endblock title %}
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="container-sm login text-center">
+
+        {% block heading %}
+            <h1>Login</h1> 
+        {% endblock heading %}
+        
+        {% block body %}
+            <!-- login form -->
+            <form action="/login/{{ user }}" method="post" class="text-center">
+
+                <!-- customize username placeholder -->
+                {% if user == "customer" %}
+                    <div class="mb-3">
+                        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="username" placeholder="Username" type="text">
+                    </div>
+                {% else %}
+                    <div class="mb-3">
+                        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="salon_name" placeholder="Salon name" type="text">
+                    </div>
+                {% endif %}
+                
+                <!-- email field -->
+                <div class="mb-3">
+                    <input name="email" type="email" class="form-control mx-auto w-auto" id="exampleFormControlInput1" placeholder="Email">
+                </div>
+                
+                <!-- password field -->
+                <div class="mb-3">
+                    <input class="form-control mx-auto w-auto" autocomplete="off" name="password" placeholder="Password" type="password">
+                </div>
+
+                <!-- login button -->
+                <button class="btn btn-primary" type="submit">Log In</button>
+            </form>
+        {% endblock body %}
+    </div>
+</div>

@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Register
+{% endblock title %}
+
+<div class="container d-flex justify-content-center align-items-center min-vh-100">
+    <div class="container-sm login text-center">
+
+        {% block heading %}
+            <h1>Register</h1> 
+        {% endblock heading %}
+        
+        {% block body %}
+            <!-- register form -->
+             <!-- the user is customer -->
+            {% if user == "customer" %}
+                <form action="/register/customer" method="post" class="text-center">
+                    <!-- username -->
+                    <div class="mb-3">
+                        <input autocomplete="off" autofocus class="form-control mx-auto w-auto" name="username" placeholder="Username" type="text">
+                    </div>
+                    <!-- email -->
+                    <div class="mb-3">
+                        <input type="email" class="form-control mx-auto w-auto" name="email" placeholder="Email">
+                    </div>
+                    <!-- password -->
+                    <div class="mb-3">
+                        <input autocomplete="off" class="form-control mx-auto w-auto" name="password" placeholder="Password" type="password">
+                    </div>
+                    <!-- confirm password -->
+                    <div class="mb-3">
+                        <input autocomplete="off" class="form-control mx-auto w-auto" name="confirmation" placeholder="Confirm Password" type="password">
+                    </div>
+
+                    <!-- register button -->
+                    <button class="btn btn-primary" type="submit">Register</button>
+                </form>
+            <!-- the user is salon -->
+            {% else %}
+                <form action="/register/salon" method="post">
+                    <!-- salon name -->
+                    <div class="mb-3">
+                        <label for="salon-name" class="form-label">Salon Name</label>
+                        <input id="salon-name" autocomplete="off" autofocus class="form-control" name="salon_name" placeholder="Salon Name" type="text">
+                    </div>
+                    <!-- email -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input id="email" type="email" class="form-control" name="email" placeholder="Email">
+                    </div>
+                    <!-- barber number -->
+                    <div class="mb-3">
+                        <label for="barber-number" class="form-label">Barber number: Number of barbers available to cut hair at a time.</label>
+                        <input class="form-control" type="number" id="barber-number" name="barber_number" placeholder="Barber Number">
+                    </div>
+                    <!-- open time -->
+                    <div class="mb-3">
+                        <label for="open-time" class="form-label">Open Time: Ensure it follows the placeholder format.</label>
+                        <input id="open-time" autocomplete="off" class="form-control" name="open_time" placeholder="e.g 09:00 AM" type="text">
+                    </div>
+                    <!-- close time -->
+                    <div class="mb-3">
+                        <label for="close-time" class="form-label">Close Time: Ensure it follows the placeholder format.</label>
+                        <input id="close-time" autocomplete="off" class="form-control" name="close_time" placeholder="e.g 09:00 PM" type="text">
+                    </div>
+                    <!-- password -->
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input id="password" autocomplete="off" class="form-control" name="password" placeholder="Password" type="password">
+                    </div>
+                    <!-- confirm password -->
+                    <div class="mb-3">
+                        <label for="confirmation" class="form-label">Confirm Password</label>
+                        <input id="confirmation" autocomplete="off" class="form-control" name="confirmation" placeholder="Confirm Password" type="password">
+                    </div>
+
+                    <!-- register button -->
+                    <button class="btn btn-primary" type="submit">Register</button>
+                </form>
+            {% endif %}
+        {% endblock body %}
+    </div>
+</div>

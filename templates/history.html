@@ -1,0 +1,86 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    History
+{% endblock title %}
+
+{% block heading %}
+    <h1>History</h1>
+{% endblock heading %}
+
+{% block body %}
+    <!-- custom message for if you do not have any history -->
+    {% if not history %}
+        <p>You do not have any History</p>
+    <!-- show table of all reservations you've made in the past -->
+    {% else %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Salon Name</th>
+                    <th scope="col">Haircut</th>
+                    <th scope="col">Estimated Time</th>
+                    <th scope="col">Reservation Time</th>
+                    <th scope="col">Reservation Date</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- if the user is salon -->
+                {% if user == 'salon' %}
+                    {% for h in history %}
+                    <tr>
+                        <td>{{ h["username"] }}</td>
+                        
+                        {% if h["haircut"] %}
+                            <td>{{ h["haircut"][0]['name'] }}</td>
+                        {% else %}
+                            <td>{{ h["specialized_description"] }}</td>
+                        {% endif %}
+                        
+                        <td>{{ h["estimated_time"] }} minutes</td>
+                        <td>{{ h["reservation_time_start"] }} - {{ h["reservation_time_end"] }}</td>
+                        <td>{{ h["reservation_date"] }}</td>
+                        
+                        <!-- customize status message depending on the status -->
+                        {% if h["status"] == "Pending" %}
+                            <td class="text-primary-emphasis">{{ h["status"] }}</td>
+                        {% elif h["status"] == "Canceled" %}
+                            <td class="text-danger-emphasis">{{ h["status"] }}</td>
+                        {% else %}
+                            <td class="text-success-emphasis">{{ h["status"] }}</td>
+                        {% endif %}
+        
+                    </tr>
+                    {% endfor %}
+                <!-- the user is the customer -->
+                {% else %}
+                    {% for h in history %}
+                    <tr>
+                        <td>{{ h["salon_name"] }}</td>
+                        
+                        {% if h["haircut"] %}
+                            <td>{{ h["haircut"][0]['name'] }}</td>
+                        {% else %}
+                            <td>{{ h["specialized_description"] }}</td>
+                        {% endif %}
+                        
+                        <td>{{ h["estimated_time"] }} minutes</td>
+                        <td>{{ h["reservation_time_start"] }} - {{ h["reservation_time_end"] }}</td>
+                        <td>{{ h["reservation_date"] }}</td>
+                        
+                        {% if h["status"] == "Pending" %}
+                            <td class="text-primary-emphasis">{{ h["status"] }}</td>
+                        {% elif h["status"] == "Canceled" %}
+                            <td class="text-danger-emphasis">{{ h["status"] }}</td>
+                        {% else %}
+                            <td class="text-success-emphasis">{{ h["status"] }}</td>
+                        {% endif %}
+                    </tr>
+                    {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>    
+    {% endif %}
+
+{% endblock body %}

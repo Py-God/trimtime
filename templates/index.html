@@ -1,0 +1,79 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Home
+{% endblock title %}
+
+{% block heading %}
+    <h1>Welcome</h1>
+{% endblock heading %}
+
+{% block body %}
+    <!-- if user is salon -->
+    {% if user == 'salon' %}
+        <!-- show custom message if nobody has made a reservation with you. -->
+        {% if not salon_reservations_list %}
+            <p>You do not have any Reservations</p>
+        {% else %}
+
+            <!-- total reseravtions made with you -->
+            <p>Total reservations: {{ total_reservations }}</p>
+
+            <!-- table to show details of people who have made a reservation -->
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Haircut</th>
+                        <th scope="col">Estimated Time</th>
+                        <th scope="col">Reservation Time</th>
+                        <th scope="col">Reservation Date</th>
+                    </tr>
+                </thead>
+                <tbody>
+
+                    {% for reservation in salon_reservations_list %}
+                        <tr>
+                            <td>{{ reservation["username"] }}</td>
+                            <!-- show haircut on table or specialized description depending on which is in database -->
+                            {% if reservation["haircut"] %}
+                                <td>{{ reservation["haircut"][0]['name'] }}</td>
+                            {% else %}
+                                <td>{{ reservation["specialized_description"] }}</td>
+                            {% endif %}
+                            
+                            <td>{{ reservation["estimated_time"] }} minutes</td>
+                            <td>{{ reservation["reservation_time_start"] }} - {{ reservation["reservation_time_end"] }}</td>
+                            <td>{{ reservation["reservation_date"] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>    
+        {% endif %}
+    <!-- if user is customer -->
+    {% else %}
+        <!-- show alert if your reservation is fulfilled -->
+        {% if salon_fulfilled %}
+        <div class="alert alert-success" role="alert">
+            Your reservation with {{ salon_fulfilled[0]["salon_name"] }} has been automatically fulfilled.
+            Check your history for more details.
+        </div>
+        <!-- show alert if your reservation time is due -->
+        {% elif salon_due %}
+            <div class="alert alert-info" role="alert">
+                You are due for your appointment with {{ salon_due[0]["salon_name"] }}.
+            </div>
+        {% endif %}
+
+        <!-- list the registered salons: available for reservation -->
+        <div class="list-group">
+            {% for salon in salons %}
+                <!-- form for when you click on a salon -->
+                <form class="index" action="/{{ user }}" method="post">
+                    <input type="hidden" name="salon" value="{{ salon['salon_id'] }}">
+                    <button type="submit" class="list-group-item list-group-item-action">{{ salon["salon_name"] }}</button>
+                </form>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock body %}

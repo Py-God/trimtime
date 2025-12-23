@@ -1,0 +1,84 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Reservation
+{% endblock title %}
+
+{% block heading %}
+    <h1>Reservation: {{ salon_name }}</h1>
+{% endblock heading %}
+
+
+{% block body %}
+    <!-- show alert if time is close to closing time -->
+    {% if is_closing_time %}
+        <div class="alert alert-warning" role="alert">
+            You cannot make any more reservations for today. 
+            Your reservation would be made for tomorrow
+        </div>
+    {% endif %}
+
+    <!-- show open and close times of salon -->
+    <p>Open Time: {{ open_time }}</p>
+    <p>Close Time: {{ close_time }}</p>
+
+    <!-- show available reservation times for your haircut -->
+    {% if is_closing_time %}
+        <p>There is no Available Reservation Time for Today.</p>
+        <p>Available Reservation Time for Tomorrow: {{ available_time_tomorrow }}</p>
+        <p>Available Reservation Time for Next two days: {{ available_time_next_tomorrow }}</p>
+    {% else %}
+        <p>Available Reservation Time for Today: {{ available_time_today }}</p>
+        <p>Available Reservation Time for Tomorrow: {{ available_time_tomorrow }}</p>
+        <p>Available Reservation Time for Next two days: {{ available_time_next_tomorrow }}</p>
+    {% endif %}
+    <hr>
+
+    <!-- form for making a reservation -->
+    <form method="post" action="/customer/reservation/{{ salon_name }}">
+        <!-- dropdown menu for picking a haircut a salon has -->
+        <div class="mb-3">
+            <label for="haircut" class="form-label">Select a haircut:</label>
+            <!-- toggle a specialized description field if you pick a specialized haircut -->
+            <select id="haircut" class="form-select" aria-label="Default select example" name="haircut" onchange="toggleSpecializedFields()">
+                <option value="">--Select a haircut--</option>
+                {% for haircut in haircuts %}
+                <option name="haircut" value="{{ haircut.id }}">{{ haircut.name }} - {{ haircut.estimated_time }} minutes</option>
+                {% endfor %}
+                <option name="haircut" value="specialized">Specialized Haircut</option>
+            </select>
+        </div>
+        <!-- field for picking date for your haircut -->
+        <div class="mb-3">
+            <label class="form-label" for="date">Date:</label>
+            <input class="form-control" type="date" name="date">
+        </div>
+        <!-- specialized description field that would be toggled -->
+        <div class="mb-3" id="specialized_fields" style="display:none;">
+            <label for="specialized_description" class="form-label">Describe your haircut:</label>
+            <textarea id="specialized_description" class="form-control" rows="3" name="specialized_description"></textarea>
+
+            <!-- input your estimated time for your specialized haircut -->
+            <label for="estimated_time" class="form-label">Estimated Time (minutes):</label>
+            <input class="form-control" type="number" id="estimated_time" name="estimated_time">
+        </div>
+
+        <!-- reserve button -->
+        <button class="btn btn-primary" type="submit">Reserve</button>
+    </form>
+{% endblock body %}
+
+<!-- javascript code for toggling the specialized description field. -->
+{% block script %}
+    <script>
+        function toggleSpecializedFields() {
+            var haircutSelect = document.getElementById('haircut');
+            var specializedFields = document.getElementById('specialized_fields');
+            if (haircutSelect.value === 'specialized') {
+                specializedFields.style.display = 'block';
+            } else {
+                specializedFields.style.display = 'none';
+            }
+        }
+    </script>
+{% endblock script %}

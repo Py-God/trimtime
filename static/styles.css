@@ -1,0 +1,16 @@
+body {
+    font-family: Ubuntu, sans-serif;
+}
+
+#login {
+    margin-top: 100px;
+    margin-bottom: 30px;
+}
+
+#forgot {
+    text-align: center;
+}
+
+.index {
+    margin-bottom: 10px;
+}

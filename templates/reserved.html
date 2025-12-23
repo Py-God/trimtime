@@ -1,0 +1,58 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    reserved
+{% endblock title %}
+
+{% block heading %}
+    <h1>Reserved: {{ salon_name }}</h1>
+    <!-- show the amount of reservations that has been made for that salon for that day -->
+    <p>Total Reservations for {{ reservation_date }}: {{ total_reservations }}</p>
+{% endblock heading %}
+
+{% block body %}
+    <!-- table for showing reservation details -->
+    <table class="table table-striped">
+        <thead>
+        <tr>
+            <th scope="col">Reservation details</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr>
+            <th scope="row">Salon Name:</th>
+            <td>{{ salon_name }}</td>
+        </tr>
+        <tr>
+            <th scope="row">Haircut:</th>
+            <td>{{ haircut }}</td>
+        </tr>
+        <tr>
+            <th scope="row">Estimated Time:</th>
+            <td colspan="2">{{ estimated_time }} minutes</td>
+        </tr>
+        <tr>
+            <th scope="row">Reservation Time:</th>
+            <td colspan="2">{{ reservation_time_start }} - {{ reservation_time_end }}</td>
+        </tr>
+        <tr>
+            <th scope="row">Reservation Date:</th>
+            <td colspan="2">{{ reservation_date }}</td>
+        </tr>
+        </tbody>
+    </table>
+
+    <!-- button to cancel your reservation -->
+    <table class="table">
+        <tbody>
+            <tr>
+                <td>
+                    <form class="index" action="/cancel_reservation" method="post">
+                        <input type="hidden" name="reservation_id" value="{{ reservation_id }}">
+                        <button type="submit" class="btn btn-danger">Cancel Reservation</button>
+                    </form>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock body %}

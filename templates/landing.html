@@ -1,0 +1,29 @@
+{% extends 'layout.html' %}
+
+
+{% block title %}
+    Landing
+{% endblock title %}
+    
+
+{% block heading %}
+    <h1 id="login-header">Landing</h1> 
+{% endblock heading %}
+
+{% block body %}
+    <h2 id="login">Enter As:</h2>
+
+    <!-- pick which user to login as -->
+    <div class="row align-items-center">
+        <div class="col">
+            <form method="post" action="/">
+            <button name="user" value="customer" type="submit" class="btn btn-info">Customer</button>
+            </form>
+        </div>
+        <div class="col">
+            <form method="post" action="/">
+                <button name="user" value="salon" type="submit" class="btn btn-info">Salon</button>
+            </form>
+        </div>
+    </div>
+{% endblock body %}

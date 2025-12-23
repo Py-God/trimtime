@@ -1,0 +1,142 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    Profile
+{% endblock title %}
+
+{% block heading %}
+    <h1>Profile</h1> 
+{% endblock heading %}
+
+{% block body %}
+    <!-- profile if the user is a customer -->
+    {% if user == "customer" %}
+        <!-- table of profile details -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Profile Details</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in details %}
+                    <tr>
+                        <th scope="row">Username</th>
+                        <td>{{ detail["username"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Email</th>
+                        <td>{{ detail["email"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Total Number of Reservations made till date</th>
+                        <td>{{ total_number_of_reservations }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+
+        <!-- field to edit profile details -->
+        <h3>Change Profile Details</h3>
+        <hr>
+
+        <form action="/customer/edit_profile" method="post">
+            <div class="mb-3">
+                <label for="username" class="form-label">Change Username</label>
+                <input id="username" class="form-control" name="username" placeholder="Change Username" type="text">
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Change Email</label>
+                <input id="email" class="form-control" name="email" placeholder="Change Email" type="text">
+            </div>
+            <p>We are sorry, but, we are still working on the change password option.</p>
+
+            <!-- update details button -->
+            <button class="btn btn-primary" type="submit">Update Details</button>
+        </form>
+        <hr>
+
+        <!-- delete account button -->
+        <form action="/customer/delete_account">
+            <button type="submit" class="btn btn-danger">Delete Account</button>
+            <p>There is no dialog box popup when you click this. It will delete your account IMMEDIATELY.</p>
+        </form>
+    <!-- profile if the user is a salon -->
+    {% else %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">Profile Details</th>
+                    <th scope="col"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for detail in details %}
+                    <tr>
+                        <th scope="row">Salon Name</th>
+                        <td>{{ detail["salon_name"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Email</th>
+                        <td>{{ detail["email"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Barber Number</th>
+                        <td>{{ detail["barber_number"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Open Time</th>
+                        <td>{{ detail["open_time"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Close Time</th>
+                        <td>{{ detail["close_time"] }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Total Number of Reservations till date</th>
+                        <td>{{ total_number_of_reservations }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <hr>
+
+        <h3>Change Profile Details</h3>
+        <hr>
+
+        <form action="/salon/edit_profile" method="post">
+            <div class="mb-3">
+                <label for="salon-name" class="form-label">Change Salon Name</label>
+                <input id="salon-name" class="form-control" name="salon_name" placeholder="Change Salon Name" type="text">
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Change Email</label>
+                <input id="email" class="form-control" name="email" placeholder="Change Email" type="text">
+            </div>
+            <p>We are sorry, but, we are still working on the change password option.</p>
+
+            <div class="mb-3">
+                <label for="barber-number" class="form-label">Change Barber Number: Cannot be zero</label>
+                <input id="barber-number" class="form-control" name="barber_number" placeholder="Change Barber Number" type="number">
+            </div>
+            <div class="mb-3">
+                <label for="open-time" class="form-label">Change Open Time: Ensure it follows the placeholder format.</label>
+                <input id="open-time" class="form-control" name="open_time" placeholder="Change Open Time: e.g 09:00 AM" type="text">
+            </div>
+            <div class="mb-3">
+                <label for="close-time" class="form-label">Change Close Time: Ensure it follows the placeholder format.</label>
+                <input id="close-time" class="form-control" name="close_time" placeholder="Change Close Time: e.g 09:00 PM" type="text">
+            </div>
+
+            <button class="btn btn-primary" type="submit">Update Details</button>
+        </form>
+        <hr>
+
+        <form action="/customer/delete_account">
+            <button type="submit" class="btn btn-danger">Delete Account</button>
+            <p>There is no dialog box popup when you click this. It will delete your account IMMEDIATELY.</p>
+        </form>
+    {% endif %}      
+{% endblock body %}

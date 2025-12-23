@@ -1,0 +1,57 @@
+{% extends 'layout.html' %}
+
+{% block title %}
+    my_haircuts
+{% endblock title %}
+
+{% block heading %}
+    <h1>My Haircuts</h1> 
+{% endblock heading %}
+
+{% block body %}
+    <!-- form for adding a new haircut -->
+    <form action="/salon/my_haircuts" method="post">
+        <!-- haircut name -->
+        <div class="mb-3">
+            <label for="haircut-name" class="form-label">Haircut Name</label>
+            <input id="haircut-name" autocomplete="off" autofocus class="form-control" name="haircut_name" placeholder="Haircut Name" type="text">
+        </div>
+        <!-- estimated time for haircut -->
+        <div class="mb-3">
+            <label for="estimated_time" class="form-label">Estimated Time (minutes):</label>
+            <input class="form-control" type="number" id="estimated_time" name="estimated_time">
+        </div>
+        <!-- add haircut button -->
+        <button class="btn btn-primary" type="submit">Add Haircut</button>
+    </form>
+    <hr>
+
+    <!-- show list of haircuts you've already added -->
+    <h3>Your Haircuts:</h3>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th scope="col">Haircut Name</th>
+                <th scope="col">Estimated Time (minutes)</th>
+                <th scope="col"></th>
+            </tr>
+        </thead>
+        <tbody>
+
+            {% for haircut in haircuts %}
+                <tr>
+                    <td>{{ haircut["name"] }}</td>
+                    <td>{{ haircut["estimated_time"] }} minutes</td>
+                    <!-- form to remove haircut you've already added -->
+                    <td>
+                        <form action="/salon/remove_haircut" method="post">
+                            <input type="hidden" name="haircut_id" value="{{ haircut['id'] }}">
+                            <button type="submit" class="btn btn-danger">Remove Haircut</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock body %}
