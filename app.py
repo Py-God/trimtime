@@ -1,5 +1,5 @@
-# sql library from cs50
-from cs50 import SQL
+# sqlite3 library
+import sqlite3
 
 # flask modules
 from flask import (
@@ -9,7 +9,8 @@ from flask import (
     redirect, 
     abort, 
     url_for, 
-    session
+    session,
+    g
     )
 
 # session from flask session
@@ -40,13 +41,33 @@ from werkzeug.security import (
 # app declaration
 app = Flask(__name__)
 
-# database for app
-db = SQL("sqlite:///trimtime.db")
-
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
 app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
+
+
+# setup db
+def get_db():
+    if 'db' not in g:
+        g.db = sqlite3.connect("trimtime.db")
+        g.db.row_factory = sqlite3.Row # Allows accessing columns by name
+    return g.db
+
+@app.teardown_appcontext
+def close_db(error):
+    db = g.pop('db', None)
+    if db is not None:
+        db.close()
+
+def query_db(query, args=(), one=False):
+    """Wrapper to make queries look like CS50's query_db"""
+    cur = get_db().execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    get_db().commit() # Auto-commit changes
+    return (rv[0] if rv else None) if one else rv
+
 
 # Ensure responses aren't cached
 @app.after_request
@@ -78,30 +99,32 @@ def index(user):
     # index page for salon
     if user == "salon":
         # reservations made with that salon
-        salon_reservations = db.execute(
+        salon_reservations = query_db(
         "SELECT * \
             FROM reservations \
                 WHERE salon_id = ? \
                     AND status = ?",
+        (
         session["user_id"],
         "Pending"
+        )
         )
         
         # custom list made for salon for display
         salon_reservations_list = [
             {
                 "id": reservation["id"],
-                "username": db.execute(
+                "username": query_db(
                     "SELECT username \
                         FROM users \
                             WHERE id = ?",
-                    reservation["user_id"]
+                    (reservation["user_id"],)
                 )[0]["username"],
-                "haircut": db.execute(
+                "haircut": query_db(
                     "SELECT name \
                         FROM haircuts \
                             WHERE id = ?",
-                    reservation["haircut_id"]
+                    (reservation["haircut_id"],)
                 ),
                 "specialized_description": reservation["specialized_description"],
                 "estimated_time": reservation["estimated_time"],
@@ -133,21 +156,23 @@ def index(user):
                 abort(400, description="Missing parameters")
 
             # get required tables from database
-            salon_name = db.execute(
+            salon_name = query_db(
                 "SELECT salon_name \
                     FROM salons \
                         WHERE salon_id = ?", 
-                salon_id
+                (salon_id,)
                 )[0]["salon_name"]
-            reservations = db.execute(
+            reservations = query_db(
                 "SELECT * \
                     FROM reservations \
                         WHERE user_id = ? \
                             AND salon_id = ? \
                                 AND status = ?", 
+                (
                 session["user_id"], 
                 salon_id,
                 "Pending"
+                )
                 )
             
             # if you've have a pending reservation before
@@ -161,18 +186,18 @@ def index(user):
         # GET method
         else:
             # get list of salons
-            salons = db.execute("SELECT * FROM salons")
+            salons = query_db("SELECT * FROM salons")
 
             # check if you have a reservation due in some time
-            salon_due = db.execute(
+            salon_due = query_db(
                 "SELECT salon_name \
                     FROM salons \
                         WHERE salon_id = ?",
-                alert()
+                (alert(),)
                 )
             
             # get if you have a fulfilled reservation for that day
-            salon_fulfilled = db.execute(
+            salon_fulfilled = query_db(
                 "SELECT salon_name \
                     FROM salons \
                         WHERE salon_id = \
@@ -182,8 +207,10 @@ def index(user):
                                     WHERE reservation_date = ? \
                                         AND status = ? \
                                             )",
+                            (
                             get_current_date(),
                             "Fulfilled"
+                            )
             )
             
             return render_template(
@@ -201,19 +228,19 @@ def profile(user):
     # user is customer
     if user == "customer":
         # get profile details from database
-        details = db.execute(
+        details = query_db(
             "SELECT * \
                 FROM users \
                     WHERE id = ?",
-            session["user_id"]
+            (session["user_id"],)
         )
 
         # get the total number of reservations you've made with the app till date
-        total_number_of_reservations = db.execute(
+        total_number_of_reservations = query_db(
             "SELECT COUNT(id) \
                 FROM reservations \
                     WHERE user_id = ?",
-            session["user_id"]
+            (session["user_id"],)
         )[0]["COUNT(id)"]
     # user is salon
     else:
@@ -221,45 +248,45 @@ def profile(user):
         details = [
             {
                 "id": session["user_id"],
-                "salon_name": db.execute(
+                "salon_name": query_db(
                     "SELECT username \
                         FROM users \
                             WHERE id = ?",
-                    session["user_id"]
+                    (session["user_id"],)
                 )[0]["username"],
-                "email": db.execute(
+                "email": query_db(
                     "SELECT email \
                         FROM users \
                             WHERE id = ?",
-                    session["user_id"]
+                    (session["user_id"],)
                 )[0]["email"],
-                "barber_number": db.execute(
+                "barber_number": query_db(
                     "SELECT barber_number \
                         FROM salons \
                             WHERE salon_id = ?",
-                    session["user_id"]
+                    (session["user_id"],)
                 )[0]["barber_number"],
-                "open_time": db.execute(
+                "open_time": query_db(
                     "SELECT open_time \
                         FROM salons \
                             WHERE salon_id = ?",
-                    session["user_id"]
+                    (session["user_id"],)
                 )[0]["open_time"],
-                "close_time": db.execute(
+                "close_time": query_db(
                     "SELECT close_time \
                         FROM salons \
                             WHERE salon_id = ?",
-                    session["user_id"]
+                    (session["user_id"],)
                 )[0]["close_time"],
             }
         ]
 
         # get total number of reservations made with salon till date
-        total_number_of_reservations = db.execute(
+        total_number_of_reservations = query_db(
             "SELECT COUNT(id) \
                 FROM reservations \
                     WHERE salon_id = ?",
-            session["user_id"]
+            (session["user_id"],)
         )[0]["COUNT(id)"]
 
     return render_template(
@@ -284,20 +311,24 @@ def edit_profile(user):
 
             # update database depending on which fields you supplied
             if new_username:
-                db.execute(
+                query_db(
                     "UPDATE users \
                         SET username = ? \
                             WHERE id = ?",
+                    (
                     new_username,
                     session["user_id"]
+                    )
                 )
             if new_email:
-                db.execute(
+                query_db(
                     "UPDATE users \
                         SET email = ? \
                             WHERE id = ?",
+                    (
                     new_email,
                     session["user_id"]
+                    )
                 )
             
             return redirect(url_for("profile", user=user))
@@ -312,20 +343,24 @@ def edit_profile(user):
 
             # update the database depending on the fields the salon supplied
             if new_salon_name:
-                db.execute(
+                query_db(
                     "UPDATE users \
                         SET username = ? \
                             WHERE id = ?",
+                    (
                     new_salon_name,
                     session["user_id"]
+                    )
                 )
             if new_email:
-                db.execute(
+                query_db(
                     "UPDATE users \
                         SET email = ? \
                             WHERE id = ?",
+                    (
                     new_email,
                     session["user_id"]
+                    )
                 )
             if new_barber_number:
                 try:
@@ -336,34 +371,40 @@ def edit_profile(user):
                 if new_barber_number <= 0:
                     abort(400, "Barber Number cannot be zero.")
 
-                db.execute(
+                query_db(
                     "UPDATE salons \
                         SET barber_number = ? \
                             WHERE salon_id = ?",
+                    (
                     new_barber_number,
                     session["user_id"]
+                    )
                 )
             if new_open_time:
                 if not verify_registration_times(new_open_time):
                     abort(400, description="Open Time does not match required pattern")
 
-                db.execute(
+                query_db(
                     "UPDATE salons \
                         SET open_time = ? \
                             WHERE salon_id = ?",
+                    (
                     new_open_time,
                     session["user_id"]
+                    )
                 )
             if new_close_time:
                 if not verify_registration_times(new_close_time):
                     abort(400, description="Close Time does not match required pattern")
 
-                db.execute(
+                query_db(
                     "UPDATE salons \
                         SET close_time = ? \
                             WHERE salon_id = ?",
+                    (
                     new_close_time,
                     session["user_id"]
+                    )
                 )
             
             return redirect(url_for("profile", user=user))
@@ -380,22 +421,22 @@ def delete_account(user):
     if request.method == "POST":
         # the user was a customer
         if user == "customer":
-            db.execute(
+            query_db(
                 "DELETE FROM users \
                     WHERE id = ?",
-                session["user_id"]
+                (session["user_id"],)
             )
         # the user was a salon
         else:
-            db.execute(
+            query_db(
                 "DELETE FROM users \
                     WHERE id = ?",
-                session["user_id"]
+                (session["user_id"],)
             )
-            db.execute(
+            query_db(
                 "DELETE FROM salons \
                     WHERE salon_id = ?",
-                session["user_id"]
+                (session["user_id"],)
             )
         
         return redirect(url_for("landing"))
@@ -428,18 +469,18 @@ def login(user):
 
         # Query database for username
         if user == "customer":
-            rows = db.execute(
+            rows = query_db(
                 "SELECT * \
                     FROM users \
                         WHERE username = ?", 
-                request.form.get("username")
+                (request.form.get("username"),)
                 )
         else:
-            rows = db.execute(
+            rows = query_db(
                 "SELECT * \
                     FROM users \
                         WHERE username = ?", 
-                request.form.get("salon_name")
+                (request.form.get("salon_name"),)
                 )
 
         # Ensure username exists and password is correct
@@ -502,7 +543,7 @@ def register(user):
             password_hash = generate_password_hash(password, method="scrypt", salt_length=16)
 
             # verify if that username already exists
-            usernames = [user["username"] for user in db.execute(
+            usernames = [user["username"] for user in query_db(
             "SELECT * \
                 FROM users"
             )]
@@ -511,14 +552,16 @@ def register(user):
                 abort(400, description="Username already exists")
 
             # Add to database
-            db.execute(
+            query_db(
                 "INSERT INTO users \
                     (username, email, password_hash, is_salon) \
                         VALUES(?, ?, ?, ?)",
+                (
                 username, 
                 email, 
                 password_hash, 
                 is_salon
+                )
             )
         else:
             # get form fields
@@ -557,7 +600,7 @@ def register(user):
             password_hash = generate_password_hash(password, method="scrypt", salt_length=16)
 
             # verify if that username already exists
-            usernames = [user["username"] for user in db.execute(
+            usernames = [user["username"] for user in query_db(
             "SELECT * \
                 FROM users"
             )]
@@ -566,18 +609,20 @@ def register(user):
                 abort(400, description="Username already exists")
 
             # Add to database
-            salon_id = db.execute(
+            salon_id = query_db(
                 "INSERT INTO users \
                     (username, email, password_hash, is_salon) \
                         VALUES(?, ?, ?, ?)",
+                (
                 salon_name, 
                 email, 
                 password_hash, 
                 is_salon
+                )
             )
 
             # verify if that username already exists
-            salon_names = [salon["salon_name"] for salon in db.execute(
+            salon_names = [salon["salon_name"] for salon in query_db(
             "SELECT * \
                 FROM salons"
             )]
@@ -586,15 +631,17 @@ def register(user):
                 abort(400, description="Salon name already exists")
             
             # add into salons if that salon id doesnt already exist
-            db.execute(
+            query_db(
                 "INSERT INTO salons \
                     (salon_id, salon_name, barber_number, open_time, close_time) \
                         VALUES(?, ?, ?, ?, ?)",
+                (
                 salon_id,
                 salon_name,
                 barber_number,
                 open_time,
                 close_time
+                )
             )
 
         # Redirect to login page
@@ -631,11 +678,11 @@ def reservation(salon_name):
             except ValueError:
                 abort(400, "Your estimated time must be an integer (in minutes)")
 
-            close_time = db.execute(
+            close_time = query_db(
                 "SELECT close_time \
                     FROM salons \
                         WHERE salon_name = ?",
-                salon_name
+                (salon_name,)
                 )[0]["close_time"]
             
             # check if its thirty minutes to close time; you should work with the next day then
@@ -646,27 +693,29 @@ def reservation(salon_name):
             reservation_time_start, reservation_time_end = get_reservation_times(salon_name, date, estimated_time)
 
             # ensure you've not made a reservation before
-            reservations = db.execute(
+            reservations = query_db(
                 "SELECT * \
                     FROM reservations \
                         WHERE user_id = ? \
                             AND status = ?", 
+                (
                 session["user_id"],
                 "Pending"
+                )
                 )
             if reservations:
                 abort(400, "Error in retrieving reservation: Multiple reservations.")
 
             # get id of salon you are making a reservation with
-            salon_id = db.execute(
+            salon_id = query_db(
                 "SELECT salon_id \
                     FROM salons \
                         WHERE salon_name = ?", 
-                salon_name
+                (salon_name,)
                 )[0]["salon_id"]
 
             # insert reservation into database
-            db.execute(
+            query_db(
                 "INSERT INTO reservations \
                     (\
                     user_id, \
@@ -679,6 +728,7 @@ def reservation(salon_name):
                                                 status \
                                                 ) \
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
                 session["user_id"], 
                 salon_id, 
                 text, 
@@ -687,6 +737,7 @@ def reservation(salon_name):
                 reservation_time_start, 
                 reservation_time_end, 
                 "Pending"
+                )
                 )
             
             return redirect(url_for("reserved", salon_name=salon_name))
@@ -703,7 +754,7 @@ def reservation(salon_name):
                 abort(400, description="Missing Haircut")
 
             # check if haircut picked is in database of haircuts allowed for that salon
-            haircut_ids = [haircut["id"] for haircut in db.execute(
+            haircut_ids = [haircut["id"] for haircut in query_db(
                 "SELECT * \
                     FROM haircuts \
                         WHERE salon_id = \
@@ -712,29 +763,29 @@ def reservation(salon_name):
                                 FROM salons \
                                     WHERE salon_name = ?\
                                         )", 
-                salon_name
+                (salon_name,)
                 )]
             if haircut_id not in haircut_ids:
                 abort(400, description="Haircut does not exist")
 
             # get parameters needed to add to reservations table
-            salon_id = db.execute(
+            salon_id = query_db(
                 "SELECT salon_id \
                     FROM salons \
                         WHERE salon_name = ?", 
-                salon_name
+                (salon_name,)
                 )[0]["salon_id"]
-            estimated_time = db.execute(
+            estimated_time = query_db(
                 "SELECT estimated_time \
                     FROM haircuts \
                         WHERE id = ?", 
-                haircut_id
+                (haircut_id,)
                 )[0]["estimated_time"]
-            close_time = db.execute(
+            close_time = query_db(
                 "SELECT close_time \
                     FROM salons \
                         WHERE salon_name = ?",
-                salon_name
+                (salon_name,)
                 )[0]["close_time"]
 
             # if its thirty minutes to closing time, you need to work with the next day
@@ -745,19 +796,19 @@ def reservation(salon_name):
             reservation_time_start, reservation_time_end = get_reservation_times(salon_name, date, estimated_time)
 
             # check if you've made a reservation before
-            reservations = db.execute(
+            reservations = query_db(
                 "SELECT * \
                     FROM reservations \
                         WHERE user_id = ? \
                             AND status = ?", 
-                session["user_id"],
-                "Pending"
+                (session["user_id"],
+                "Pending",)
                 )
             if reservations:
                 abort(400, "Error in retrieving reservation: Multiple reservations.")
 
             # add to reservations table
-            db.execute(
+            query_db(
                 "INSERT INTO reservations \
                     (\
                     user_id, \
@@ -770,6 +821,7 @@ def reservation(salon_name):
                                                 status \
                                                 ) \
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                (
                 session["user_id"], 
                 salon_id, 
                 haircut_id, 
@@ -779,11 +831,12 @@ def reservation(salon_name):
                 reservation_time_end,
                 "Pending"
                 )
+                )
 
             return redirect(url_for("reserved", salon_name=salon_name))
     # you want to make a reservation
     else:
-        haircuts = db.execute(
+        haircuts = query_db(
             "SELECT * \
                 FROM haircuts \
                     WHERE salon_id = \
@@ -793,21 +846,21 @@ def reservation(salon_name):
                                 WHERE salon_name = ?\
                                     ) \
                                     ORDER BY estimated_time", 
-            salon_name
+            (salon_name,)
             )
         
         # get open and close times for the salon you want to make a reservation with
-        open_time = db.execute(
+        open_time = query_db(
             "SELECT open_time \
                 FROM salons \
                     WHERE salon_name = ?",
-            salon_name
+            (salon_name,)
         )[0]["open_time"]
-        close_time = db.execute(
+        close_time = query_db(
             "SELECT close_time \
                 FROM salons \
                     WHERE salon_name = ?",
-            salon_name
+            (salon_name,)
         )[0]["close_time"]
 
         # get the current date
@@ -846,13 +899,15 @@ def reservation(salon_name):
 @login_required
 def reserved(salon_name):
     # get your pending reservation
-    reservations = db.execute(
+    reservations = query_db(
         "SELECT * \
             FROM reservations \
                 WHERE user_id = ? \
                     AND status = ?", 
+        (
         session["user_id"],
         "Pending"
+        )
         )
     
     # redirect you to index page if you dont have a reservation pending
@@ -870,15 +925,15 @@ def reserved(salon_name):
 
     # haircut is originally set to specialized description, set it to an haircut in haircuts table if not specialized haircut
     if not haircut:
-        haircut = db.execute(
+        haircut = query_db(
             "SELECT name \
                 FROM haircuts \
                     WHERE id = ?", 
-            haircut_id
+            (haircut_id,)
             )[0]["name"]
 
     # query reservations table again just to get the total number of reservations made with that salon
-    reservations = db.execute(
+    reservations = query_db(
         "SELECT * \
             FROM reservations \
                 WHERE salon_id = \
@@ -889,20 +944,24 @@ def reserved(salon_name):
                                 ) \
                                 AND reservation_date = ? \
                                     AND status = ?", 
+        (
         salon_name, 
         reservation_date,
         "Pending"
         )
+        )
     total_reservations = len(reservations)
 
     # get reservation id for that reservation you made to autofulfil it after the time elapses
-    reservation_id = db.execute(
+    reservation_id = query_db(
         "SELECT id\
               FROM reservations \
                 WHERE user_id = ? \
                     AND status = ?", 
+        (
         session["user_id"],
         "Pending"
+        )
         )[0]["id"]
 
     # check if reservation time has elapsed
@@ -914,12 +973,15 @@ def reserved(salon_name):
     if compare_dates and compare_times:
         is_time = True
 
-        db.execute(
+        query_db(
             "UPDATE reservations \
                 SET status = ? \
                     WHERE id = ?", 
+            (
             "Fulfilled", 
-            reservation_id)
+            reservation_id
+            )
+            )
         
         return redirect(url_for("index", user=session["user_type"]))
 
@@ -949,21 +1011,23 @@ def my_reservations():
             abort(400, description="Missing parameters")
 
         # get parameters to ensure you haven't made a reservation before
-        salon_name = db.execute(
+        salon_name = query_db(
             "SELECT salon_name \
                 FROM salons \
                     WHERE salon_id = ?", 
-            salon_id
+            (salon_id,)
             )[0]["salon_name"]
-        reservations = db.execute(
+        reservations = query_db(
             "SELECT * \
                 FROM reservations \
                     WHERE user_id = ? \
                         AND salon_id = ? \
                             AND status = ?", 
+            (
             session["user_id"], 
             salon_id,
             "Pending"
+            )
             )
         
         # use those parameters to check if you've made a reservation before.
@@ -976,7 +1040,7 @@ def my_reservations():
     # you clicked on the my reservations link
     else:
         #  get salon you've made a reservation with
-        salons = db.execute(
+        salons = query_db(
             "SELECT * \
                 FROM salons \
                     WHERE salon_id = \
@@ -986,8 +1050,10 @@ def my_reservations():
                                 WHERE user_id = ? \
                                     AND status = ?\
                                     )", 
+            (
             session["user_id"],
             "Pending"
+            )
             )
         
         # verify again if you have made multiple reservations
@@ -1023,11 +1089,11 @@ def my_haircuts():
             abort(400, description="Estimated time has to be greater than 0 minutes")
 
         # get list of ha
-        haircuts = [haircut["name"] for haircut in db.execute(
+        haircuts = [haircut["name"] for haircut in query_db(
             "SELECT * \
                 FROM haircuts \
                     WHERE salon_id = ?",
-            session["user_id"]
+            (session["user_id"],)
         )]
         
         # verify if that haircut already exists
@@ -1035,24 +1101,26 @@ def my_haircuts():
             abort(400, description="Haircut already exists")
 
         # insert new haircut into database
-        db.execute(
+        query_db(
             "INSERT INTO haircuts \
                 (name, salon_id, estimated_time) \
                     VALUES(?, ?, ?)",
+            (
             haircut_name, 
             session["user_id"], 
             estimated_time
+            )
         )
 
         return redirect("my_haircuts")
 
     else:
         # get haircuts the salon has added
-        haircuts = db.execute(
+        haircuts = query_db(
             "SELECT * \
                 FROM haircuts \
                     WHERE salon_id = ?",
-            session["user_id"]
+            (session["user_id"],)
         )
         return render_template("my_haircuts.html", haircuts=haircuts)
     
@@ -1067,11 +1135,11 @@ def remove_haircut():
         haircut_id = request.form.get("haircut_id")
 
         # remove that haircut from the database
-        db.execute(
+        query_db(
             "DELETE FROM \
                 haircuts WHERE \
                     id = ?",
-            haircut_id
+            (haircut_id,)
         )
 
         return redirect(url_for("my_haircuts"))
@@ -1087,27 +1155,28 @@ def history(user):
     # if salon is the one checking the history
     if user == "salon":
         # get reservation details of salon
-        salon_reservations = db.execute(
+        salon_reservations = query_db(
         "SELECT * \
             FROM reservations \
                 WHERE salon_id = ?",
-        session["user_id"])
+        (session["user_id"],)
+        )
         
         # make custom list for the history details
         history_list = [
             {
                 "id": reservation["id"],
-                "username": db.execute(
+                "username": query_db(
                     "SELECT username \
                         FROM users \
                             WHERE id = ?",
-                    reservation["user_id"]
+                    (reservation["user_id"],)
                 )[0]["username"],
-                "haircut": db.execute(
+                "haircut": query_db(
                     "SELECT name \
                         FROM haircuts \
                             WHERE id = ?",
-                    reservation["haircut_id"]
+                    (reservation["haircut_id"],)
                 ),
                 "specialized_description": reservation["specialized_description"],
                 "estimated_time": reservation["estimated_time"],
@@ -1122,26 +1191,27 @@ def history(user):
         return render_template("history.html", history=history_list, user=user)
     # if its a customer checking history
     else:
-        history = db.execute(
+        history = query_db(
             "SELECT * \
                 FROM reservations \
                     WHERE user_id = ?",
-            session["user_id"])
+            (session["user_id"],)
+            )
         
         history_list = [
             {
                 "id": h["id"],
-                "salon_name": db.execute(
+                "salon_name": query_db(
                     "SELECT salon_name \
                         FROM salons \
                             WHERE salon_id = ?",
-                    h["salon_id"]
+                    (h["salon_id"],)
                 )[0]["salon_name"],
-                "haircut": db.execute(
+                "haircut": query_db(
                     "SELECT name \
                         FROM haircuts \
                             WHERE id = ?",
-                    h["haircut_id"]
+                    (h["haircut_id"],)
                 ),
                 "specialized_description": h["specialized_description"],
                 "estimated_time": h["estimated_time"],
@@ -1166,12 +1236,15 @@ def cancel_reservation():
         reservation_id = request.form.get("reservation_id")
 
         # remove that reservation from the database
-        db.execute(
+        query_db(
             "UPDATE reservations \
                 SET status = ? \
                     WHERE id = ?", 
+            (
             "Canceled", 
-            reservation_id)  
+            reservation_id
+            )
+            )  
 
         return redirect(url_for("index", user=session["user_type"]))
     
@@ -1182,13 +1255,10 @@ def cancel_reservation():
 # helper function: get reservation time start and end
 def get_reservation_times(salon_name, date, estimated_time):
     # get the open time of the salon you want to make a reservation with
-    open_time = db.execute(
-                "SELECT open_time \
-                    FROM salons \
-                        WHERE salon_name = ?", 
-                salon_name
-                )[0]["open_time"]
+    row = query_db("SELECT open_time FROM salons WHERE salon_name = ?", (salon_name, ))
     
+    open_time = row[0]["open_time"]
+
     # get the last end time that salon allocated
     endtime_last_allocated = get_endtime_last_allocated(date, salon_name)
 
@@ -1210,15 +1280,17 @@ def alert():
     date = get_current_date()
 
     # go through database checking if you've made any reservations five minutes from date and time up to actual time
-    reservation = db.execute(
+    reservation = query_db(
         "SELECT * \
             FROM reservations \
                 WHERE reservation_date = ? \
                     AND user_id = ? \
                         AND status = ?",
+        (
         date,
         session["user_id"],
         "Pending"
+        )
     )
     
     # check if customer has made a reservaton
@@ -1234,15 +1306,15 @@ def alert():
 # helper function: get the last endtime a salon allocated
 def get_endtime_last_allocated(date, salon_name):
     # get the barber number of a salon
-    barber_number = db.execute(
+    barber_number = query_db(
         "SELECT barber_number \
             From salons \
                 WHERE salon_name = ?",
-        salon_name
+        (salon_name,)
     )[0]["barber_number"]
 
     # get the amount of barbers that have already been booked with that salon
-    salon_booked_spots = db.execute(
+    salon_booked_spots = query_db(
         "SELECT COUNT(id) \
             FROM reservations \
                 WHERE salon_id = \
@@ -1253,14 +1325,16 @@ def get_endtime_last_allocated(date, salon_name):
                                 ) \
                 AND reservation_date = ? \
                 AND status = ?",
+        (
         salon_name,
         date,
         "Pending"
+        )
     )
 
     # there is no reservations made for that salon or that salon has its barbers all booked
     if not salon_booked_spots or int(barber_number) - int(salon_booked_spots[0]["COUNT(id)"]) <= 0:
-        endtime_last_allocated = db.execute(
+        endtime_last_allocated = query_db(
                     "SELECT reservation_time_end as t \
                         FROM reservations \
                             WHERE reservation_date = ? \
@@ -1287,6 +1361,7 @@ def get_endtime_last_allocated(date, salon_name):
                                     ORDER BY reservation_time_start \
                                         ASC \
                                             LIMIT 1",
+                    (
                     date,
                     salon_name,
                     "Pending",
@@ -1294,10 +1369,11 @@ def get_endtime_last_allocated(date, salon_name):
                     salon_name,
                     "Pending"
                     )
+                    )
     
     # if not all the barbers have been booked: allocate the last reservation time start you allocated
     if int(barber_number) - int(salon_booked_spots[0]["COUNT(id)"]) > 0:
-        endtime_last_allocated = db.execute(
+        endtime_last_allocated = query_db(
                 "SELECT reservation_time_start as t \
                     FROM reservations \
                         WHERE reservation_date = ? \
@@ -1311,9 +1387,11 @@ def get_endtime_last_allocated(date, salon_name):
                                 ORDER BY reservation_time_end \
                                     DESC \
                                         LIMIT 1",
+                (
                 date,
                 salon_name,
                 "Pending"
+                )
                 )
         
     return endtime_last_allocated
