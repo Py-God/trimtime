@@ -60,6 +60,13 @@ The system runs on a relational **SQLite** database enforcing strict integrity:
     ```bash
     flask run
     ```
+    
+## 🐳 Running with Docker
+You can run this application in a containerized environment:
+
+1. **Build the image:**
+   ```bash
+   docker build -t trimtime .
 
 ---
 *Developed by [Boluwatife Leke-Oduoye](https://github.com/Py-God)*
