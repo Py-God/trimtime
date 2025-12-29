@@ -1,0 +1,14 @@
+# Ignore the virtual environment (we build a new one inside Docker)
+venv/
+env/
+
+# Ignore git history
+.git/
+.gitignore
+
+# Ignore compiled python files
+__pycache__/
+*.pyc
+
+# Ignore local database (optional - usually you want a fresh DB or a volume)
+*.db

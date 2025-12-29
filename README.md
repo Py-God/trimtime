@@ -1,61 +1,72 @@
-# A BARBERSHOP RESERVATION WEB APP
+# ✂️ TrimTime: Intelligent Salon Reservation System
+
+A multi-tenant scheduling platform connecting customers with local barbershops. The system features a dynamic reservation engine that calculates available time slots in real-time based on service duration, shop operating hours, and existing booking conflicts.
+
 #### Video Demo:  https://youtu.be/eHhbaZaA-sc?feature=shared
-#### Description:
-The **barbershop reservation web app** is a website where you can make a reservation for an haircut with any barbing salon registered on the application. It solves the problem of having to wait in a queue to get a haircut in most barbing salons. This project can also extend from just making reservations for your haircut to other activities that involve waiting in queues. Activities like, University registrations, buying from certain shops, and the like, can be better handled with a reservation application.
 
-At the top of my project folders, is the *.venv* folder, my virtual environment which contains all the installed libraries I used for this project. I also have my *flask_session* folder used to store my local sessions as I run the website on my computer. My *static* folder contains a *styles.css* file, which contains all the css I wrote to customize the look of the website. There also contains an *images* folder, which contains the images I used in my website. Most of which are just for the favicon and the home link.
+## 🚀 Key Features
 
-I also have a *templates* folder, where I store all of my html files accounting for everything you see as you traverse the web application. I have in the folder,
-1. A *layout.html* file which contains all the declaration of the resources I used in the display of the web pages. From the css to the web font and the bootstrap. It defines the navigation bar, which customizes itself depending on whichever user you login as. It also describes blocks of code to be used in the other html files I would need for the website.
-2. A *landing.html* file which contains all the markup for the landing page you see, as a new user, when you enter the website. Here you can choose if you would be using the site as a *customer* or a *salon*. A customer is the person who would want to have their hair cut. A salon is the barbing salon where the customer's hair would be cut.
-3. A *login.html* file which contains all the markup for the login page you would see after you pick an option on the landing page. The login page is where you can log into the site as any user of your choice. I wanted a little difference for whether you were logging in as a customer or a salon, so I changed the customer's *username* to *salon name* for the salon. You cannot log in unless you have registered before.
-4. A *register.html* file which contains all the markup for the register page. This is the page where you add yourself as a new user of the website. This allows you to be able to log into the site. The register page for a customer and for a salon is sufficiently different. I knew there had to be more details to be required for a salon, than for a customer. I had to make a decision here on whether salons should be able to register themselves, or they have to go through some administrator of the website. I didn't really see any difference in both options, since i'd still have to customize the admin page for registering salons to look like the salon register page I already have.
-5. An *Index.html* file which contains all the markup for the home page you see when you log in as either a customer or a salon. This page contains a list of registered salons, if you logged in as a customer. It contains a list of customers that have a pending reservation with a salon, if you logged in as a salon. It is also the page where most alerts on your reservation would show if required.
-6. A *reservation.html* file which contains all the markup for the reservation page you would be redirected to when you click on any of the registered salons on the index page, if you have not made a reservation before, as a customer. This page shows some details about the salon you clicked on, like the open and close times of the salon, plus a menu to choose whichever haircut you want to cut, that has been added by the salon. And an option to pick a custom haircut. It also has a date field, where you can pick what date you would like your reservation should fall on. 
-7. A *reserved.html* file which contains the markup for the reserved page you would be redirected to after you've made a reservation with a salon. It contains the your reservation details.
-8. A *my_reservations.html* file which contains the markup for the my reservations page where you can view whichever salon you have a pending reservation with.
-9. A *my_haircuts.html* file which contains the markup for the page where salons can view and add whichever haircuts they want to be available to be cut by the customers.
-10. An *history.html* file which contains the markup for the history page where a customer can view details of all the reservations they've made in the past. It is where a salon can view the details of all the reservations made with them. There is a status allocated to each reservation made. "Pending", if you have not fulfilled or canceled your reservation. "Canceled", if you canceled a reservation you made. "Fulfilled" if you have fulfilled your reservation.
-11. A *Profile.html* file which contains the markup for the profile page where both customers and salons can view and edit their profile details if needed. There is no way to edit your password yet. I haven't figured out how to handle that kind of authentication.
+### 1. Dynamic Time-Slot Allocation Algorithm
+Unlike standard booking apps that use fixed 30-minute blocks, TrimTime utilizes a custom **greedy scheduling algorithm** to maximize salon efficiency:
+* **Real-time Calculation:** Automatically calculates the start and end time of a reservation based on the specific duration of the chosen haircut (e.g., a 45-minute cut vs. a 15-minute trim).
+* **Conflict Prevention:** Queries the database for the *last allocated end-time* to ensure no overlapping bookings occur for a specific barber.
+* **Edge Case Handling:** Automatically detects if a service duration exceeds the shop's closing time and intelligently suggests the next available slot on the following business day.
 
-I have a database file, which contains four tables, namely, users, where registered users and their details are stored. Salons, where registered salons and their details are stored. reservations, where reservations made and its details are stored, and haircuts, where salon haircuts and their details are stored.
+### 2. Role-Based Access Control (RBAC)
+The application implements distinct workflows for two user types:
+* **Customers:** Can browse salons, view service menus, input custom "Specialized" requests, and track reservation history.
+* **Salons:** Access a management dashboard to view pending appointments, manage their service catalog (CRUD operations for Haircuts), and update operating hours.
 
-I have a *helper.py* file where I wrote functions that would help in the logic of my main code, but do not need to live in my main *app.py*. Functions like:
-1. *login_required*, which ensures a user is logged in before accessing any of the urls it is used on.
-2. *verify_date*, which returns true if the date passed into it is the current date, false if not. It is important in checking if the current date is the date a customer has a reservation for.
-3. *get_formatted_time*, which returns time passed into it as a 24hr time format, after removing the 'AM'/'PM'. It was required to make, to make it easy to work with the other functions I have in the file.
-4. *is_time_on_or_before*, which returns true if a time is on or before the time passed into the function. Created for the same reasons as (2) above.
-5. *check_thirty_minutes*, which returns true if the current time is within thirty minutes of the time passed into the function. It is important in alerting the user if the current time is close to a reservation time.
-6. *get_reservation_time_end*, which returns a new time after adding a particular amount of minutes, passed into the function, to the time also passed into the function. This is important in getting the endtime of reservation times.
-7. *get_reservation_time_start*, which returns a time thirty minutes from the current time if the current time is past the open time of a salon. Else it returns the open time. It is important in ensuring tha reservations are not made for a time in the past.
-8. *get_current_date*, which returns the current date. Used for getting reservation details for the current day.
-9. *get_next_day*, returns the next day from the current day. Used for getting the available reservation times for days in the future.
-10. *verify_registration_times*, returns true if the registration times provided by salons when they are registering with the website follows a particular pattern required of them to follow. Else it returns false.
+### 3. "Specialized" Service Logic
+The database schema handles polymorphic service requests:
+* Users can select from a standard list of services (Foreign Key to `haircuts` table).
+* Alternatively, users can submit **"Specialized Descriptions"** (custom text inputs) with estimated durations, which the system normalizes into the scheduling logic just like standard services.
 
-Finally, I have an *app.py* file which contains all my backend logic. At the top of the file are the libraries and modules I imported. I used cs50's SQL module to handle everything related to my database. I also imported numerous modules from the flask framework library and the session module from flask_session library to handle all my local sessions. I have all my helper functions imported also. I have python's re library imported to handle regexes. I finally have some modules imported from the werkzeug.security library in handling the storage of user passwords.
+### 4. Automated Status Management
+* **Auto-Fulfillment:** A background check verifies if a reservation's end-time has passed and automatically updates the status from `Pending` to `Fulfilled`.
+* **Cancellation Handling:** Atomic transactions ensure that when a reservation is canceled, the time slot is immediately freed up for new users.
 
-Immediately at the bottom of all my imports, I declare my flask web application and database. I have configured the website to use filesystem sessions rather than signed cookies for my local development and testing. 
+## 🛠 Database Schema
+The system runs on a relational **SQLite** database enforcing strict integrity:
+* **`Users` & `Salons`:** One-to-One relationship (A user account can be upgraded to a Salon profile).
+* **`Reservations`:** The central join table linking Users, Salons, and Haircuts, with cascading deletes to prevent orphaned records if a user/salon account is removed.
 
-I have all my functions,
-1. *after_request* ensures my responses are not cached in the browser. Used for local development.
-2. *landing* renders the landing page and redirects you to the login page after you pick a user option.
-3. *index* renders the index page after you log in. it retrieves data from the database specific to what user logs in. It also redirects the customer to the reservation or reserved urls when they click on a salon displayed on the index page.
-4. *profile* renders the profile page, when you click on the profile button. Which is specific to what user is logged in. In some functions in this file, I custom made some tables to display specific information that cannot be gotten from just one database table, or even two.
-5. *edit_profile* handles updating the database when you edit any of your profile details. It redirects you back to the profile page.
-6. *delete_account* handles removing the user details from the database when the delete profile is clicked. It redirects you to the landing page
-7. *login* renders the login page when you click on the login button. It also handles verifying the user trying to login and redirecting them to the index page if the user is valid. It store the user id as a session to remember the logged in user.
-8. *logout* logs the user out when the logout button is clicked as a logged in user. It clears the user id from the session.
-9. *register* renders the register page, whose content is user specific. It handles the addition of registered users into the database after validating the supplied user input. It displays specific fields relative to the type of user. I was not too sure what fields a salon should fill when registering. I needed to ensure any salon that registers can be verified as an actual barbing salon, and not some fake. I thought I could ask for some documents to verify, but I don't know so much about how salons are licensed. It would be something to work on in the future. It redirects the user to the login page.
-10. *reservation* renders the reservation page for the customer. It handles adding customer reservation to the database with a status of "Pending". It redirects the customer to the reserved page.
-11. *reserved* renders the reserved page, which shows the reservation details of the salon you made a reservation with.
-12. *my_reservations* renders the my reservations page, which shows the salon you have a reservation with. Clicking on the salon would redirect you to the reserved page.
-13. *my_haircuts* renders the my haircuts page for salons.
-14. *remove_haircut* handles removing an added haircut from the database, when the remove button is clicked on the my haircuts page. It redirects the salon back to the my haircuts page.
-15. *history* renders the history page, specific for both salons and customers.
-16. *cancel_reservation* handles updating the database by changing a reservation status to "Canceled"
-17. *get_reservation_times* is some sort of helper function that could not be implemented in helper.py. It returns the start and end times of a reservation made with a salon for a particular date.
-18. *alert* is another helper function that returns the id of a salon a customer made a reservation with if the current time is within thirty minutes of the start time of the customer's reservation. This id would be used in alerting the customer that their reservation time with that salon is due.
-19. *get_endtime_last_alllocated* is another helper function that returns the start time of a reservation by checking the database for what the last end time a salon reserved was. end time is the time a reservation would be completed.
-20. *get_available_times* is another helper function that returns the available reservation time for the dates passed into it.
+## 💻 Tech Stack
+* **Backend:** Python (Flask)
+* **Database:** SQLite3 (Native Python implementation)
+* **Frontend:** Jinja2, HTML5, CSS3, Bootstrap
+* **Security:** Werkzeug Security (Scrypt password hashing)
 
-That is the barbershop reservation web application.
+## 🔧 Local Installation
+
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/Py-God/trimtime.git](https://github.com/Py-God/trimtime.git)
+    ```
+
+2.  **Install Dependencies:**
+    ```bash
+    pip install -r requirements.txt
+    ```
+
+3.  **Initialize the Database:**
+    * Create a file named `trimtime.db`.
+    * Run the schema script:
+        ```bash
+        sqlite3 trimtime.db < schema.sql
+        ```
+
+4.  **Run the Application:**
+    ```bash
+    flask run
+    ```
+    
+## 🐳 Running with Docker
+You can run this application in a containerized environment:
+
+1. **Build the image:**
+   ```bash
+   docker build -t trimtime .
+
+---
+*Developed by [Boluwatife Leke-Oduoye](https://github.com/Py-God)*
